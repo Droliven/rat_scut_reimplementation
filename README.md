@@ -1,4 +1,4 @@
-# Reimplementation of Relation-Aware Transformer for Portfolio Policy Learning (RAT) (IJCAI 2020)
+# Reimplementation of RAT
 > Levon 2022.04.29
 
 reimplementation of **Relation-Aware Transformer for Portfolio Policy Learning (RAT)** (IJCAI 2020) for the **portfolio management task**, [\[paper link\]](https://doi.org/10.24963/ijcai.2020/641), [\[code link\]](https://github.com/Ivsxk/RAT). 
