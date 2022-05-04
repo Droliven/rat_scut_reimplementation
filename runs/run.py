@@ -20,13 +20,21 @@ import json
 import torch
 import pandas as pd
 from tensorboardX import SummaryWriter
+from pprint import pprint
 
 class Runner():
-    def __init__(self, ):
+    def __init__(self, args):
 
         self.cfg = Config()
-        with open(os.path.join(self.cfg.ckpt_dir, r"config.json"), encoding="utf-8") as fout:
-            fout.write()
+        print("\n================== Configs =================")
+        pprint(vars(self.cfg), indent=4)
+        print("==========================================\n")
+
+        save_dict = {"args": args.__dict__, "cfgs": self.cfg.__dict__}
+        save_json = json.dumps(save_dict)
+
+        with open(os.path.join(self.cfg.ckpt_dir, "config.json"), 'w', encoding='utf-8') as f:
+            f.write(save_json)
 
         self.model = make_model(self.cfg.batch_size, self.cfg.coin_num, self.cfg.x_window_size, self.cfg.feature_number,
                                 N=1, d_model_Encoder=self.cfg.multihead_num * self.cfg.model_dim,
@@ -180,9 +188,7 @@ class Runner():
                 padding_price = padding_price.permute((3, 1, 2, 0))  # [4, 1, 2, 11] ->[11,1,2,4]
             else:
                 padding_price = None
-            out = self.model.forward(tst_src, tst_currt_price, tst_previous_w,
-                                     # [109,1,11]   [109, 11, 31, 3]) torch.Size([109, 11, 3]
-                                     tst_src_mask, tst_trg_mask, padding_price)
+            out = self.model.forward(tst_src, tst_currt_price, tst_previous_w, tst_src_mask, tst_trg_mask, padding_price) # [4, 1, 31, 11], [11, 1, 1, 4], [1, 1, 11], [1, 1, 31], [11, 1, 8, 4] -> [1, 1, 12]
             if (j == 0):
                 tst_long_term_w = out.unsqueeze(0)  # [1,109,1,12]
             else:
