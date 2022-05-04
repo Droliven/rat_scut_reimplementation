@@ -47,14 +47,14 @@ parser = argparse.ArgumentParser(description='manual to this script')
 parser.add_argument('--exp_name', type=str, default="rat", help="")
 parser.add_argument('--is_train', type=bool, default='', help="")
 parser.add_argument('--is_load', type=bool, default='1', help="")
-parser.add_argument('--model_path', type=str, default=os.path.join(r"./ckpt/models", f"step{2000}.pth"), help="")
+parser.add_argument('--model_path', type=str, default=os.path.join(r"./ckpt/models", f"step{50000}.pth"), help="")
 
 args = parser.parse_args()
 
 print("\n================== Arguments =================")
 pprint(vars(args), indent=4)
 print("==========================================\n")
-csv_dir = os.path.join(r.cfg.ckpt_dir + "test_summary.csv")
+
 r = Runner()
 
 if args.is_load:

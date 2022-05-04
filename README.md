@@ -1,9 +1,14 @@
 # Reimplementation of RAT
 > Levon 2022.04.29
 
-reimplementation of **Relation-Aware Transformer for Portfolio Policy Learning (RAT)** (IJCAI 2020) for the **portfolio management task**, [\[paper link\]](https://doi.org/10.24963/ijcai.2020/641), [\[code link\]](https://github.com/Ivsxk/RAT). 
+reimplementation of **Relation-Aware Transformer for Portfolio Policy Learning (RAT)** (IJCAI 2020) for the **portfolio management task**.
+
+[\[Official paper\]](https://doi.org/10.24963/ijcai.2020/641), [\[Official code\]](https://github.com/Ivsxk/RAT), [\[Another unofficial code\]](https://github.com/louisoutin/rat_crypto_trader)
 
 ![Overview of RAT](./assets/pipeline.png)
+
+
+
 
 This reimplementation project has been linked to the corresponding [paperwithcode](https://paperswithcode.com/paper/relation-aware-transformer-for-portfolio) page.
 
@@ -16,8 +21,9 @@ This reimplementation project has been linked to the corresponding [paperwithcod
 
 ## Bugs to fix
 
-+ [ ] pandas.panel() 被官方舍弃，我重新通过 multi_index 实现高维表格
++ [x] pandas.panel() 被官方舍弃，我重新通过 multi_index 实现高维表格
 + [ ] 官方仓库提供的 1.pkl 预训练模型如何导入，torch.load() 报错
++ [ ] ubuntu 报错：history_manager.py, line 192, in update_data, raise Exception("Have to be online")
 
 ## Citation
 

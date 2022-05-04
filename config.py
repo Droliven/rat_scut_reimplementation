@@ -38,11 +38,14 @@ class Config:
         self.end = "2018/01/01"
 
         self.model_index = [1, 2, 3, 4, 5]
+        self.devive = "cuda:0"
 
         user = getpass.getuser()
         if user == "Drolab":
             self.base_dir = os.path.join(r"G:\second_model_report_data\portfolio_management\rat_scut")
-            self.devive = "cuda:0"
+        elif user == "songbo":
+            if os.path.exists(os.path.join(r"/home/ml_group/songbo/danglingwei204")):
+                self.base_dir = os.path.join(r"/home/ml_group/songbo/danglingwei204/datasets/financial_songbo/rat")
 
         self.pretrained_model_path = os.path.join(self.base_dir, "rat_scut.pkl")
         self.data_path = os.path.join(self.base_dir, "data.db")

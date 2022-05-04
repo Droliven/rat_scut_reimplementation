@@ -8,6 +8,7 @@
 @ide     : PyCharm
 @time    : 2022-05-03 11:29
 '''
+import os
 import sqlite3  # todo: pip install pysqlite3,  https://www.huaweicloud.com/articles/d041787cd3a68c5412ef2172c97c0dd1.html
 import pandas as pd
 import numpy as np
@@ -20,8 +21,9 @@ class HistoryManager:
     # if offline ,the coin_list could be None
     # NOTE: return of the sqlite results is a list of tuples, each tuple is a row
     def __init__(self, coin_number=11, end=int(parse_time("2018/01/01")), volume_average_days=30, volume_forward=0, online=False, database_path=""):
-        self.database_path = database_path
+        assert os.path.exists(database_path), f"Database_path {database_path} Not Exists!"
 
+        self.database_path = database_path
         self.initialize_db()
         self.__storage_period = 60 * 5  # keep this as 300 s
         self._coin_number = coin_number

@@ -16,9 +16,8 @@ from .losses import Batch_Loss, SimpleLossCompute, SimpleLossCompute_tst, Test_L
 from .optimizer import Optimizer
 
 import os
-import numpy as np
+import json
 import torch
-import time
 import pandas as pd
 from tensorboardX import SummaryWriter
 
@@ -26,6 +25,8 @@ class Runner():
     def __init__(self, ):
 
         self.cfg = Config()
+        with open(os.path.join(self.cfg.ckpt_dir, r"config.json"), encoding="utf-8") as fout:
+            fout.write()
 
         self.model = make_model(self.cfg.batch_size, self.cfg.coin_num, self.cfg.x_window_size, self.cfg.feature_number,
                                 N=1, d_model_Encoder=self.cfg.multihead_num * self.cfg.model_dim,
@@ -35,7 +36,7 @@ class Runner():
                                 dropout=0.01, local_context_length=self.cfg.local_context_length)
 
         if self.cfg.devive != "cpu":
-            self.model.to(self.cfg.devive)
+            self.model.cuda(device=self.cfg.devive)
 
         print(f"Total params: {sum([p.numel() for p in self.model.parameters()]) / 1e6} M")
 
@@ -90,10 +91,10 @@ class Runner():
         batch_last_w = batch["last_w"]  # (128, 11)
         batch_w = batch["setw"]
         #############################################################################
-        previous_w = torch.tensor(batch_last_w, dtype=torch.float).cuda()
+        previous_w = torch.tensor(batch_last_w, dtype=torch.float).cuda(device=self.cfg.devive)
         previous_w = torch.unsqueeze(previous_w, 1)  # [128, 11] -> [128,1,11]
         batch_input = batch_input.transpose((1, 0, 3, 2))
-        src = torch.tensor(batch_input, dtype=torch.float).cuda()
+        src = torch.tensor(batch_input, dtype=torch.float).cuda(device=self.cfg.devive)
         price_series_mask = (torch.ones(src.size()[1], 1, self.cfg.x_window_size) == 1)  # [128, 1, 31]
         currt_price = src.permute((3, 1, 2, 0))  # [4,128,31,11]->[11,128,31,4]
         if (self.cfg.local_context_length > 1):
@@ -104,7 +105,7 @@ class Runner():
         currt_price = currt_price[:, :, -1:, :]  # [11,128,31,4]->[11,128,1,4]
         trg_mask = make_std_mask(currt_price, src.size()[1])
         batch_y = batch_y.transpose((0, 2, 1))  # [128, 4, 11] ->#[128,11,4]
-        trg_y = torch.tensor(batch_y, dtype=torch.float).cuda()
+        trg_y = torch.tensor(batch_y, dtype=torch.float).cuda(device=self.cfg.devive)
         out = self.model(src, currt_price, previous_w, price_series_mask, trg_mask, padding_price)
         new_w = out[:, :, 1:]  # 去掉cash
         new_w = new_w[:, 0, :]  # #[109,1,11]->#[109,11]
@@ -121,11 +122,11 @@ class Runner():
         tst_batch_last_w = tst_batch["last_w"]
         tst_batch_w = tst_batch["setw"]
 
-        tst_previous_w = torch.tensor(tst_batch_last_w, dtype=torch.float).cuda()
+        tst_previous_w = torch.tensor(tst_batch_last_w, dtype=torch.float).cuda(device=self.cfg.devive)
         tst_previous_w = torch.unsqueeze(tst_previous_w, 1)  # [2426, 1, 11]
         tst_batch_input = tst_batch_input.transpose((1, 0, 2, 3))
         tst_batch_input = tst_batch_input.transpose((0, 1, 3, 2))
-        tst_src = torch.tensor(tst_batch_input, dtype=torch.float).cuda()
+        tst_src = torch.tensor(tst_batch_input, dtype=torch.float).cuda(device=self.cfg.devive)
         tst_src_mask = (torch.ones(tst_src.size()[1], 1, self.cfg.x_window_size) == 1)  # [128, 1, 31]
         tst_currt_price = tst_src.permute((3, 1, 2, 0))  # (4,128,31,11)->(11,128,31,3)
         #############################################################################
@@ -138,7 +139,7 @@ class Runner():
         tst_currt_price = tst_currt_price[:, :, -1:, :]  # (11,128,31,4)->(11,128,1,4)
         tst_trg_mask = make_std_mask(tst_currt_price, tst_src.size()[1])
         tst_batch_y = tst_batch_y.transpose((0, 2, 1))  # (128, 4, 11) ->(128,11,4)
-        tst_trg_y = torch.tensor(tst_batch_y, dtype=torch.float).cuda()
+        tst_trg_y = torch.tensor(tst_batch_y, dtype=torch.float).cuda(device=self.cfg.devive)
         ###########################################################################################################
         tst_out = self.model(tst_src, tst_currt_price, tst_previous_w, tst_src_mask, tst_trg_mask, padding_price) # [128,1,11]   [128, 11, 31, 4])
 
@@ -152,11 +153,11 @@ class Runner():
         tst_batch_last_w = tst_batch["last_w"]  # [1, 11]
         tst_batch_w = tst_batch["setw"]
 
-        tst_previous_w = torch.tensor(tst_batch_last_w, dtype=torch.float).cuda()
+        tst_previous_w = torch.tensor(tst_batch_last_w, dtype=torch.float).cuda(device=self.cfg.devive)
         tst_previous_w = torch.unsqueeze(tst_previous_w, 1) # [1, 1, 11]
 
         tst_batch_input = tst_batch_input.transpose((1, 0, 3, 2)) # [4, 1, 2806, 11]
-        long_term_tst_src = torch.tensor(tst_batch_input, dtype=torch.float).cuda()
+        long_term_tst_src = torch.tensor(tst_batch_input, dtype=torch.float).cuda(device=self.cfg.devive)
         #########################################################################################
         tst_src_mask = (torch.ones(long_term_tst_src.size()[1], 1, self.cfg.x_window_size) == 1)
 
@@ -166,7 +167,7 @@ class Runner():
         tst_trg_mask = make_std_mask(long_term_tst_currt_price[:, :, 0:1, :], long_term_tst_src.size()[1])
 
         tst_batch_y = tst_batch_y.transpose((0, 3, 2, 1)) # [1, 2776, 11, 4]
-        tst_trg_y = torch.tensor(tst_batch_y, dtype=torch.float).cuda()
+        tst_trg_y = torch.tensor(tst_batch_y, dtype=torch.float).cuda(device=self.cfg.devive)
         tst_long_term_w = []
         tst_y_window_size = len(self.data_matrices._test_ind) - self.cfg.x_window_size - 1 - 1
         for j in range(tst_y_window_size + 1):  # 0-9
@@ -198,21 +199,21 @@ class Runner():
         for i in range(self.cfg.total_step):
             self.model.train()
             loss, portfolio_value = self.train_one_step()
-            self.summary.add_scalar(f"Train/loss", loss, i)
-            self.summary.add_scalar(f"Train/portfolio_value", portfolio_value, i)
+            self.summary.add_scalar(f"Train/loss", loss, i+1)
+            self.summary.add_scalar(f"Train/portfolio_value", portfolio_value, i+1)
 
-            if (i % self.cfg.output_step == 0):
-                print(f"Train Step: {i}: Loss per batch: {loss.item()} | Portfolio_Value: {portfolio_value.item()}")
+            if (i+1 % self.cfg.output_step == 0):
+                print(f"Train Step: {i+1}: Loss per batch: {loss.item()} | Portfolio_Value: {portfolio_value.item()}")
             #### Eval 
-            if (i % self.cfg.output_step == 0):
+            if (i+1 % self.cfg.output_step == 0):
                 self.model.eval()
                 with torch.no_grad():
                     eval_loss, eval_portfolio_value = self.eval_batch()
 
-                self.summary.add_scalar(f"Eval/loss", eval_loss, i)
-                self.summary.add_scalar(f"Eval/portfolio_value", eval_portfolio_value, i)
+                self.summary.add_scalar(f"Eval/loss", eval_loss, i+1)
+                self.summary.add_scalar(f"Eval/portfolio_value", eval_portfolio_value, i+1)
 
-                print(f"Test Step: {i}: Loss per batch: {eval_loss.item()} | Portfolio_Value: {eval_portfolio_value.item()}")
+                print(f"Test Step: {i+1}: Loss per batch: {eval_loss.item()} | Portfolio_Value: {eval_portfolio_value.item()}")
                 
                 #### Test
                 self.model.eval()
@@ -220,7 +221,7 @@ class Runner():
                     tst_loss, tst_portfolio_value, SR, CR, St_v_list, tst_pc_array, TO = self.test_online()
 
                 csv_dir = os.path.join(self.cfg.ckpt_dir, "test_summary.csv")
-                d = {"step": [i],
+                d = {"step": [i+1],
                      "fAPV": [tst_portfolio_value.item()],
                      "SR": [SR.item()],
                      "CR": [CR.item()],
@@ -236,13 +237,13 @@ class Runner():
                     dataframe = new_data_frame
                 dataframe.to_csv(csv_dir)
 
-                print(f"Eval online Step: {i}: Loss: {tst_loss.item()} | Portfolio_Value: {tst_portfolio_value.item()} | SR: {SR.item()} | CR: {CR.item()} | TO: {TO.item()}")
-                self.summary.add_scalar(f"Test/loss", tst_loss, i)
-                self.summary.add_scalar(f"Test/portfolio_value", tst_portfolio_value, i)
-                self.summary.add_scalar(f"Test/SR", SR, i)
-                self.summary.add_scalar(f"Test/CR", CR, i)
-                self.summary.add_scalar(f"Test/TO", TO, i)
+                print(f"Eval online Step: {i+1}: Loss: {tst_loss.item()} | Portfolio_Value: {tst_portfolio_value.item()} | SR: {SR.item()} | CR: {CR.item()} | TO: {TO.item()}")
+                self.summary.add_scalar(f"Test/loss", tst_loss, i+1)
+                self.summary.add_scalar(f"Test/portfolio_value", tst_portfolio_value, i+1)
+                self.summary.add_scalar(f"Test/SR", SR, i+1)
+                self.summary.add_scalar(f"Test/CR", CR, i+1)
+                self.summary.add_scalar(f"Test/TO", TO, i+1)
 
                 # 保存模型
-                self.save(os.path.join(self.cfg.ckpt_dir, "models", f"step{i}.pth"))
+                self.save(os.path.join(self.cfg.ckpt_dir, "models", f"step{i+1}.pth"))
                 
